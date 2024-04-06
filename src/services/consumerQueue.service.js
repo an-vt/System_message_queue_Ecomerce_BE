@@ -21,15 +21,36 @@ const messageService = {
       const { channel } = await connectToRabbitMQ();
       const notificationQueue = "notificationQueueProcess";
 
-      const timeoutEx = 5000;
-      setTimeout(() => {
-        channel.consume(notificationQueue, (msg) => {
+      // 1. Handle Error TTL
+      // const timeoutEx = 5000;
+      // setTimeout(() => {
+      //   channel.consume(notificationQueue, (msg) => {
+      //     console.log(
+      //       `consumerToQueueNormal Received message: ${msg.content.toString()}`
+      //     );
+      //     channel.ack(msg);
+      //   });
+      // }, timeoutEx);
+
+      // 2. Handle Error Logic
+      channel.consume(notificationQueue, (msg) => {
+        try {
+          const randomNum = Math.random();
+          if (randomNum < 0.8) {
+            throw new Error("Send notification failed, HOT FIXED");
+          }
+
           console.log(
             `consumerToQueueNormal Received message: ${msg.content.toString()}`
           );
           channel.ack(msg);
-        });
-      }, 15000);
+        } catch (error) {
+          // nack: negative acknowledgment
+          // allUpTo (first boolean): if false message sẽ đươc đẩy vào hàng đợi vị lỗi, if true message sẽ được đẩy vào hàng đợi ban đầu
+          // requeue (second boolean): if false only message will be discarded, if true it will be requeued.
+          channel.nack(msg, false, false);
+        }
+      });
     } catch (error) {
       console.error(error);
     }
