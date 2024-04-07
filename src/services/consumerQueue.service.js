@@ -6,6 +6,10 @@ const log = console.log;
 console.log = function () {
   log.apply(console, [new Date()].concat(arguments));
 };
+async function sendNotification(a, retryCount) {
+  if (retryCount === 3) return Promise.resolve("Success");
+  return Promise.reject("Failed");
+}
 
 const messageService = {
   consumerQueue: async (queueName) => {
@@ -61,6 +65,7 @@ const messageService = {
       const notificationQueueHandler = "notificationQueueHotfix";
       const notificationExchangeDLX = "notificationExDLX";
       const notificationRoutingKeyDLX = "notificationRoutingKeyDLX";
+      const MAX_RETRY = 3; // Maximum retry attempts
 
       await channel.assertExchange(notificationExchangeDLX, "direct", {
         durable: true,
@@ -76,15 +81,56 @@ const messageService = {
         notificationRoutingKeyDLX
       );
 
-      await channel.consume(
+      channel.consume(
         resultQueue.queue,
-        (msgFailed) => {
-          console.log(
-            `consumerToQueueFail error message: ${msgFailed.content.toString()}, please hot fix`
-          );
+        async (msgFailed) => {
+          try {
+            const retryCount =
+              msgFailed.properties.headers["x-retry-count"] || 1;
+            const delayTime = 3000;
+
+            if (retryCount <= MAX_RETRY) {
+              try {
+                await sendNotification(
+                  msgFailed.content.toString(),
+                  retryCount
+                );
+                console.log("Notification sent successfully");
+                channel.ack(msgFailed);
+              } catch (error) {
+                // If notification sending failed, increment retry count and resend the message
+                setTimeout(() => {
+                  console.log(
+                    `Notification sending failed, retrying... ::: ${
+                      retryCount * delayTime
+                    }`
+                  );
+
+                  channel.sendToQueue(
+                    notificationQueueHandler,
+                    msgFailed.content,
+                    {
+                      headers: {
+                        "x-retry-count": retryCount + 1,
+                      },
+                    }
+                  );
+                  channel.ack(msgFailed);
+                }, retryCount * delayTime);
+              }
+            } else {
+              console.log(
+                `Maximum retry attempts reached for message: ${msgFailed.content.toString()}`
+              );
+              channel.ack(msgFailed);
+            }
+          } catch (error) {
+            console.error("Error handling retry:", error);
+            channel.nack(msgFailed);
+          }
         },
         {
-          noAck: true,
+          noAck: false, // We handle acknowledgement manually
         }
       );
     } catch (error) {
