@@ -7,7 +7,7 @@ console.log = function () {
   log.apply(console, [new Date()].concat(arguments));
 };
 async function sendNotification(a, retryCount) {
-  if (retryCount === 3) return Promise.resolve("Success");
+  if (retryCount === 4) return Promise.resolve("Success");
   return Promise.reject("Failed");
 }
 
@@ -40,7 +40,8 @@ const messageService = {
       channel.consume(notificationQueue, (msg) => {
         try {
           const randomNum = Math.random();
-          if (randomNum < 0.8) {
+          console.log("randomNum", randomNum);
+          if (randomNum < 1) {
             throw new Error("Send notification failed, HOT FIXED");
           }
 
@@ -136,6 +137,14 @@ const messageService = {
     } catch (error) {
       console.error(error);
       throw error;
+    }
+  },
+  consumerQueueEmail: async (queueName) => {
+    try {
+      const { channel, connection } = await connectToRabbitMQ();
+      await consumerQueue(channel, queueName);
+    } catch (error) {
+      console.error(`Error consumerQueue :::`, error);
     }
   },
 };
