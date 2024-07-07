@@ -1,7 +1,8 @@
-"use strict";
+'use strict';
 
-const messageService = require("./src/services/consumerQueue.service");
-const queueName = "test-topic";
+require('dotenv').config();
+const messageService = require('./src/services/consumerQueue.service');
+const queueName = 'send_mail';
 // messageService
 //   .consumerQueue(queueName)
 //   .then(() => {
@@ -11,20 +12,39 @@ const queueName = "test-topic";
 //     console.error(`Consumer queue ${queueName} fail`, error);
 //   });
 
+// messageService
+//   .consumerToQueueNormal()
+//   .then(() => {
+//     console.log(`consumerToQueueNormal queue started success`);
+//   })
+//   .catch((error) => {
+//     console.error(`consumerToQueueNormal queue fail`, error);
+//   });
+
+// messageService
+//   .consumerToQueueFail()
+//   .then(() => {
+//     console.log(`consumerToQueueFail queue started success`);
+//   })
+//   .catch((error) => {
+//     console.error(`consumerToQueueFail queue fail`, error);
+//   });
+
+// queue for handle send email
 messageService
-  .consumerToQueueNormal()
+  .consumerQueueEmail()
   .then(() => {
-    console.log(`consumerToQueueNormal queue started success`);
+    console.log(`consumerQueueEmail queue started success`);
   })
   .catch((error) => {
-    console.error(`consumerToQueueNormal queue fail`, error);
+    console.error(`consumerQueueEmail queue fail`, error);
   });
 
 messageService
-  .consumerToQueueFail()
+  .consumerQueueEmailFail()
   .then(() => {
-    console.log(`consumerToQueueFail queue started success`);
+    console.log(`consumerQueueEmailFail queue started success`);
   })
   .catch((error) => {
-    console.error(`consumerToQueueFail queue fail`, error);
+    console.error(`consumerQueueEmailFail queue fail`, error);
   });
