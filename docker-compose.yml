@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  # RabbitMQ service
+  ecomerce-mq:
+    image: rabbitmq:4.0.3-management-alpine
+    container_name: ecomerce-mq
+    ports:
+      - '15673:15672' # Management UI
+      - '5673:5672' # AMQP protocol
+    environment:
+      - RABBITMQ_DEFAULT_USER=root
+      - RABBITMQ_DEFAULT_PASS=123456
+    volumes:
+      - ecomerce-mq-data:/var/lib/rabbitmq
+    networks:
+      - ecomerce_mq_net
+
+volumes:
+  ecomerce-mq-data:
+
+# Define the custom network
+networks:
+  ecomerce_mq_net:
+    driver: bridge
